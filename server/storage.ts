@@ -498,4 +498,188 @@ export class PgStorage implements IStorage {
 }
 
 // Create a common storage instance that we can switch between implementations
+// MongoDB Storage Implementation
+export class MongoDbStorage implements IStorage {
+  private client: any;
+  
+  constructor(client: any) {
+    this.client = client;
+  }
+
+  private getCollection(name: string) {
+    return this.client.db('ecommerce').collection(name);
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.getCollection('users').findOne({ id });
+    return result || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.getCollection('users').findOne({ username });
+    return result || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await this.getCollection('users').findOne({ email });
+    return result || undefined;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const newUser = { 
+      ...user, 
+      id: await this.getNextId('users'),
+      isAdmin: false 
+    };
+    await this.getCollection('users').insertOne(newUser);
+    return newUser;
+  }
+
+  // Category operations
+  async getCategories(): Promise<Category[]> {
+    return this.getCollection('categories').find().toArray();
+  }
+
+  async getCategoryById(id: number): Promise<Category | undefined> {
+    const result = await this.getCollection('categories').findOne({ id });
+    return result || undefined;
+  }
+
+  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
+    const result = await this.getCollection('categories').findOne({ slug });
+    return result || undefined;
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const newCategory = { 
+      ...category, 
+      id: await this.getNextId('categories') 
+    };
+    await this.getCollection('categories').insertOne(newCategory);
+    return newCategory;
+  }
+
+  // Product operations
+  async getProducts(): Promise<Product[]> {
+    return this.getCollection('products').find().toArray();
+  }
+
+  async getProductById(id: number): Promise<Product | undefined> {
+    const result = await this.getCollection('products').findOne({ id });
+    return result || undefined;
+  }
+
+  async getProductBySlug(slug: string): Promise<Product | undefined> {
+    const result = await this.getCollection('products').findOne({ slug });
+    return result || undefined;
+  }
+
+  async getProductsByCategory(categoryId: number): Promise<Product[]> {
+    return this.getCollection('products').find({ categoryId }).toArray();
+  }
+
+  async getProductsByIds(ids: number[]): Promise<Product[]> {
+    return this.getCollection('products').find({ id: { $in: ids } }).toArray();
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const newProduct = { 
+      ...product, 
+      id: await this.getNextId('products'),
+      rating: 4.5,
+      reviewCount: Math.floor(Math.random() * 200) + 1
+    };
+    await this.getCollection('products').insertOne(newProduct);
+    return newProduct;
+  }
+
+  // Order operations
+  async getOrders(userId: number): Promise<Order[]> {
+    return this.getCollection('orders').find({ userId }).toArray();
+  }
+
+  async getOrderById(id: number): Promise<Order | undefined> {
+    const result = await this.getCollection('orders').findOne({ id });
+    return result || undefined;
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const newOrder = { 
+      ...order, 
+      id: await this.getNextId('orders'),
+      createdAt: new Date()
+    };
+    await this.getCollection('orders').insertOne(newOrder);
+    return newOrder;
+  }
+
+  // Order Item operations
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return this.getCollection('orderItems').find({ orderId }).toArray();
+  }
+
+  async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    const newOrderItem = { 
+      ...orderItem, 
+      id: await this.getNextId('orderItems') 
+    };
+    await this.getCollection('orderItems').insertOne(newOrderItem);
+    return newOrderItem;
+  }
+
+  // Cart operations
+  async getCartItems(userId: number): Promise<CartItem[]> {
+    return this.getCollection('cartItems').find({ userId }).toArray();
+  }
+
+  async getCartItem(userId: number, productId: number): Promise<CartItem | undefined> {
+    const result = await this.getCollection('cartItems').findOne({ userId, productId });
+    return result || undefined;
+  }
+
+  async createCartItem(cartItem: InsertCartItem): Promise<CartItem> {
+    const newCartItem = { 
+      ...cartItem, 
+      id: await this.getNextId('cartItems') 
+    };
+    await this.getCollection('cartItems').insertOne(newCartItem);
+    return newCartItem;
+  }
+
+  async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
+    const result = await this.getCollection('cartItems').findOneAndUpdate(
+      { id },
+      { $set: { quantity } },
+      { returnDocument: 'after' }
+    );
+    return result || undefined;
+  }
+
+  async deleteCartItem(id: number): Promise<boolean> {
+    const result = await this.getCollection('cartItems').deleteOne({ id });
+    return result.deletedCount > 0;
+  }
+
+  async clearCart(userId: number): Promise<boolean> {
+    const result = await this.getCollection('cartItems').deleteMany({ userId });
+    return result.deletedCount > 0;
+  }
+
+  // Helper method to get the next ID for a collection
+  private async getNextId(collectionName: string): Promise<number> {
+    // Get counters collection
+    const countersCollection = this.client.db('ecommerce').collection('counters');
+    
+    // Update the counter or create it if it doesn't exist
+    const result = await countersCollection.findOneAndUpdate(
+      { _id: collectionName },
+      { $inc: { sequence_value: 1 } },
+      { upsert: true, returnDocument: 'after' }
+    );
+    
+    return result.sequence_value;
+  }
+}
+
 export let storage: IStorage = new MemStorage();

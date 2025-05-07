@@ -1,9 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { PgStorage } from "./storage";
+import { MongoDbStorage, MemStorage } from "./storage";
+import { connectToDatabase } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -42,25 +41,23 @@ app.use((req, res, next) => {
 // Initialize database storage 
 let dbStorage;
 
-// Try to connect to PostgreSQL if DATABASE_URL is available
-if (process.env.DATABASE_URL) {
-  try {
-    log("Connecting to PostgreSQL database...");
-    const connectionString = process.env.DATABASE_URL;
-    const client = postgres(connectionString);
-    const db = drizzle(client);
-    
-    // Create PostgreSQL storage implementation
-    dbStorage = new PgStorage(db);
-    log("PostgreSQL database connected successfully");
-  } catch (error) {
-    log(`Error connecting to PostgreSQL database: ${error}`, "error");
-    log("Falling back to in-memory storage");
-    dbStorage = null;
-  }
-}
+// Start with in-memory storage to prevent blocking server startup
+dbStorage = new MemStorage();
+log("In-memory storage initialized for initial startup");
 
 (async () => {
+  // Start the MongoDB connection in parallel with server startup
+  connectToDatabase()
+    .then(client => {
+      log("MongoDB Atlas database connected successfully");
+      dbStorage = new MongoDbStorage(client);
+    })
+    .catch(error => {
+      log(`Error connecting to MongoDB Atlas: ${error}`, "error");
+      log("Keeping in-memory storage due to MongoDB connection failure");
+    });
+
+  // Register routes with the storage implementation
   const server = await registerRoutes(app, dbStorage);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

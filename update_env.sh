@@ -1,3 +1,5 @@
+#!/bin/bash
+cat > .env << EOL
 # MongoDB Atlas Credentials
 DATABASE_URL=mongodb+srv://tukawael452:I2M7aXdZT9oOg0B6@cluster0.udwgvo2.mongodb.net/
 
@@ -5,7 +7,10 @@ DATABASE_URL=mongodb+srv://tukawael452:I2M7aXdZT9oOg0B6@cluster0.udwgvo2.mongodb
 JWT_SECRET=your_jwt_secret_key_here
 
 # Node environment
-NODE_ENV=production
+NODE_ENV=development
 
 # Optional: Custom port (default is 5000)
 # PORT=5000
+EOL
+
+echo "Updated .env file with MongoDB Atlas connection string"
