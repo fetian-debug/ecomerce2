@@ -7,8 +7,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies and type declarations
 RUN npm ci
+RUN npm i --save-dev @types/bcrypt @types/jsonwebtoken @types/react-helmet
 
 # Copy all files
 COPY . .

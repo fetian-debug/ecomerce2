@@ -6,6 +6,7 @@ import {
   orderItems, type OrderItem, type InsertOrderItem,
   cartItems, type CartItem, type InsertCartItem
 } from "@shared/schema";
+import { eq, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -348,4 +349,153 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// PostgreSQL Storage Implementation
+export class PgStorage implements IStorage {
+  private db: any;
+  
+  constructor(db: any) {
+    this.db = db;
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values({
+      ...user,
+      isAdmin: false
+    }).returning();
+    return result[0];
+  }
+
+  // Category operations
+  async getCategories(): Promise<Category[]> {
+    return this.db.select().from(categories);
+  }
+
+  async getCategoryById(id: number): Promise<Category | undefined> {
+    const result = await this.db.select().from(categories).where(eq(categories.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
+    const result = await this.db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
+    return result[0];
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const result = await this.db.insert(categories).values(category).returning();
+    return result[0];
+  }
+
+  // Product operations
+  async getProducts(): Promise<Product[]> {
+    return this.db.select().from(products);
+  }
+
+  async getProductById(id: number): Promise<Product | undefined> {
+    const result = await this.db.select().from(products).where(eq(products.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getProductBySlug(slug: string): Promise<Product | undefined> {
+    const result = await this.db.select().from(products).where(eq(products.slug, slug)).limit(1);
+    return result[0];
+  }
+
+  async getProductsByCategory(categoryId: number): Promise<Product[]> {
+    return this.db.select().from(products).where(eq(products.categoryId, categoryId));
+  }
+
+  async getProductsByIds(ids: number[]): Promise<Product[]> {
+    return this.db.select().from(products).where(inArray(products.id, ids));
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const result = await this.db.insert(products).values({
+      ...product,
+      rating: 4.5,
+      reviewCount: Math.floor(Math.random() * 200) + 1
+    }).returning();
+    return result[0];
+  }
+
+  // Order operations
+  async getOrders(userId: number): Promise<Order[]> {
+    return this.db.select().from(orders).where(eq(orders.userId, userId));
+  }
+
+  async getOrderById(id: number): Promise<Order | undefined> {
+    const result = await this.db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const result = await this.db.insert(orders).values(order).returning();
+    return result[0];
+  }
+
+  // Order Item operations
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return this.db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    const result = await this.db.insert(orderItems).values(orderItem).returning();
+    return result[0];
+  }
+
+  // Cart operations
+  async getCartItems(userId: number): Promise<CartItem[]> {
+    return this.db.select().from(cartItems).where(eq(cartItems.userId, userId));
+  }
+
+  async getCartItem(userId: number, productId: number): Promise<CartItem | undefined> {
+    const result = await this.db
+      .select()
+      .from(cartItems)
+      .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createCartItem(cartItem: InsertCartItem): Promise<CartItem> {
+    const result = await this.db.insert(cartItems).values(cartItem).returning();
+    return result[0];
+  }
+
+  async updateCartItem(id: number, quantity: number): Promise<CartItem | undefined> {
+    const result = await this.db
+      .update(cartItems)
+      .set({ quantity })
+      .where(eq(cartItems.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCartItem(id: number): Promise<boolean> {
+    await this.db.delete(cartItems).where(eq(cartItems.id, id));
+    return true;
+  }
+
+  async clearCart(userId: number): Promise<boolean> {
+    await this.db.delete(cartItems).where(eq(cartItems.userId, userId));
+    return true;
+  }
+}
+
+// Create a common storage instance that we can switch between implementations
+export let storage: IStorage = new MemStorage();

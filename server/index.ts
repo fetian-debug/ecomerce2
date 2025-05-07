@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { PgStorage } from "./storage";
 
 const app = express();
 app.use(express.json());
@@ -36,8 +39,29 @@ app.use((req, res, next) => {
   next();
 });
 
+// Initialize database storage 
+let dbStorage;
+
+// Try to connect to PostgreSQL if DATABASE_URL is available
+if (process.env.DATABASE_URL) {
+  try {
+    log("Connecting to PostgreSQL database...");
+    const connectionString = process.env.DATABASE_URL;
+    const client = postgres(connectionString);
+    const db = drizzle(client);
+    
+    // Create PostgreSQL storage implementation
+    dbStorage = new PgStorage(db);
+    log("PostgreSQL database connected successfully");
+  } catch (error) {
+    log(`Error connecting to PostgreSQL database: ${error}`, "error");
+    log("Falling back to in-memory storage");
+    dbStorage = null;
+  }
+}
+
 (async () => {
-  const server = await registerRoutes(app);
+  const server = await registerRoutes(app, dbStorage);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

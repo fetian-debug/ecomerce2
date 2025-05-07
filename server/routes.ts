@@ -1,6 +1,6 @@
 import { Router, type Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, type IStorage, MemStorage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import session from "express-session";
@@ -21,7 +21,9 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "very-secret-session-key";
 // Configure the session store
 const SessionStore = MemoryStore(session);
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, customStorage?: IStorage): Promise<Server> {
+  // Use custom storage if provided, otherwise use default
+  const dbStorage: IStorage = customStorage || storage;
   // Set up session middleware
   app.use(
     session({
@@ -91,12 +93,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { confirmPassword, ...userData } = req.body;
       
       // Check if user already exists
-      const existingUser = await storage.getUserByUsername(userData.username);
+      const existingUser = await dbStorage.getUserByUsername(userData.username);
       if (existingUser) {
         return res.status(409).json({ message: "Username already exists" });
       }
       
-      const existingEmail = await storage.getUserByEmail(userData.email);
+      const existingEmail = await dbStorage.getUserByEmail(userData.email);
       if (existingEmail) {
         return res.status(409).json({ message: "Email already exists" });
       }
@@ -106,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(userData.password, salt);
       
       // Create user
-      const user = await storage.createUser({
+      const user = await dbStorage.createUser({
         ...userData,
         password: hashedPassword,
       });
@@ -132,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
       
       // Check if user exists
-      const user = await storage.getUserByUsername(username);
+      const user = await dbStorage.getUserByUsername(username);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -162,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user
   apiRouter.get("/users/me", verifyToken, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.userId);
+      const user = await dbStorage.getUser(req.userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -179,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Categories routes
   apiRouter.get("/categories", async (req, res) => {
     try {
-      const categories = await storage.getCategories();
+      const categories = await dbStorage.getCategories();
       res.json(categories);
     } catch (error) {
       console.error("Get categories error:", error);
@@ -189,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.get("/categories/:slug", async (req, res) => {
     try {
-      const category = await storage.getCategoryBySlug(req.params.slug);
+      const category = await dbStorage.getCategoryBySlug(req.params.slug);
       
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
@@ -209,9 +211,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let products;
       
       if (categoryId) {
-        products = await storage.getProductsByCategory(categoryId);
+        products = await dbStorage.getProductsByCategory(categoryId);
       } else {
-        products = await storage.getProducts();
+        products = await dbStorage.getProducts();
       }
       
       res.json(products);
@@ -223,14 +225,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.get("/products/:slug", async (req, res) => {
     try {
-      const product = await storage.getProductBySlug(req.params.slug);
+      const product = await dbStorage.getProductBySlug(req.params.slug);
       
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
       
       // Get the category for the product
-      const category = await storage.getCategoryById(product.categoryId || 0);
+      const category = await dbStorage.getCategoryById(product.categoryId || 0);
       
       res.json({ ...product, category });
     } catch (error) {
@@ -242,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart routes
   apiRouter.get("/cart", verifyToken, async (req: any, res) => {
     try {
-      const cartItems = await storage.getCartItems(req.userId);
+      const cartItems = await dbStorage.getCartItems(req.userId);
       
       if (cartItems.length === 0) {
         return res.json({ items: [], total: 0 });
@@ -250,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get product details for each cart item
       const productIds = cartItems.map(item => item.productId);
-      const products = await storage.getProductsByIds(productIds);
+      const products = await dbStorage.getProductsByIds(productIds);
       
       // Create a map for easy product lookup
       const productsMap = new Map(products.map(product => [product.id, product]));
@@ -293,17 +295,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { productId, quantity } = req.body;
       
       // Check if product exists
-      const product = await storage.getProductById(productId);
+      const product = await dbStorage.getProductById(productId);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
       
       // Check if already in cart
-      const existingCartItem = await storage.getCartItem(req.userId, productId);
+      const existingCartItem = await dbStorage.getCartItem(req.userId, productId);
       
       if (existingCartItem) {
         // Update quantity
-        const updatedCartItem = await storage.updateCartItem(
+        const updatedCartItem = await dbStorage.updateCartItem(
           existingCartItem.id,
           existingCartItem.quantity + quantity
         );
@@ -311,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Add new item to cart
-      const cartItem = await storage.createCartItem({
+      const cartItem = await dbStorage.createCartItem({
         userId: req.userId,
         productId,
         quantity
@@ -333,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid quantity" });
       }
       
-      const updatedCartItem = await storage.updateCartItem(cartItemId, quantity);
+      const updatedCartItem = await dbStorage.updateCartItem(cartItemId, quantity);
       
       if (!updatedCartItem) {
         return res.status(404).json({ message: "Cart item not found" });
@@ -349,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.delete("/cart/:id", verifyToken, async (req: any, res) => {
     try {
       const cartItemId = parseInt(req.params.id);
-      const success = await storage.deleteCartItem(cartItemId);
+      const success = await dbStorage.deleteCartItem(cartItemId);
       
       if (!success) {
         return res.status(404).json({ message: "Cart item not found" });
@@ -364,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.delete("/cart", verifyToken, async (req: any, res) => {
     try {
-      await storage.clearCart(req.userId);
+      await dbStorage.clearCart(req.userId);
       res.json({ message: "Cart cleared" });
     } catch (error) {
       console.error("Clear cart error:", error);
@@ -375,11 +377,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   apiRouter.get("/orders", verifyToken, async (req: any, res) => {
     try {
-      const orders = await storage.getOrders(req.userId);
+      const orders = await dbStorage.getOrders(req.userId);
       
       // Enhance orders with items
       const enhancedOrders = await Promise.all(orders.map(async order => {
-        const items = await storage.getOrderItems(order.id);
+        const items = await dbStorage.getOrderItems(order.id);
         return { ...order, items };
       }));
       
@@ -395,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { address, total } = req.body;
       
       // Create order
-      const order = await storage.createOrder({
+      const order = await dbStorage.createOrder({
         userId: req.userId,
         total,
         status: "pending",
@@ -403,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Get cart items
-      const cartItems = await storage.getCartItems(req.userId);
+      const cartItems = await dbStorage.getCartItems(req.userId);
       
       if (cartItems.length === 0) {
         return res.status(400).json({ message: "Cart is empty" });
@@ -411,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get product details for each cart item
       const productIds = cartItems.map(item => item.productId);
-      const products = await storage.getProductsByIds(productIds);
+      const products = await dbStorage.getProductsByIds(productIds);
       
       // Create a map for easy product lookup
       const productsMap = new Map(products.map(product => [product.id, product]));
@@ -423,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const price = product.isOnSale && product.salePrice ? product.salePrice : product.price;
         
-        await storage.createOrderItem({
+        await dbStorage.createOrderItem({
           orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
@@ -432,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Clear cart
-      await storage.clearCart(req.userId);
+      await dbStorage.clearCart(req.userId);
       
       res.status(201).json({ order });
     } catch (error) {
@@ -444,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/orders/:id", verifyToken, async (req: any, res) => {
     try {
       const orderId = parseInt(req.params.id);
-      const order = await storage.getOrderById(orderId);
+      const order = await dbStorage.getOrderById(orderId);
       
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -456,11 +458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get order items
-      const items = await storage.getOrderItems(orderId);
+      const items = await dbStorage.getOrderItems(orderId);
       
       // Get products for each order item
       const productIds = items.map(item => item.productId);
-      const products = await storage.getProductsByIds(productIds);
+      const products = await dbStorage.getProductsByIds(productIds);
       
       // Create a map for easy product lookup
       const productsMap = new Map(products.map(product => [product.id, product]));

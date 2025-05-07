@@ -10,24 +10,30 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
+      - PGUSER=${PGUSER}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGDATABASE=${PGDATABASE}
+      - PGHOST=${PGHOST}
+      - PGPORT=${PGPORT}
     networks:
       - app-network
     depends_on:
-      - mongodb
+      - postgres
   
-  # MongoDB service
-  mongodb:
-    image: mongo:latest
+  # PostgreSQL service
+  postgres:
+    image: postgres:15-alpine
     restart: always
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-      - MONGO_INITDB_DATABASE=ecommerce
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
     volumes:
-      - mongodb-data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - app-network
+    ports:
+      - "5432:5432"
   
   # Nginx service for routing
   nginx:
@@ -61,5 +67,5 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb-data:
+  postgres-data:
     driver: local

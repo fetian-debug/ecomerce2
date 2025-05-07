@@ -49,10 +49,13 @@ Create a `.env` file with your database credentials and other environment variab
 
 ```bash
 cat > .env << EOF
-# MongoDB Credentials
-MONGO_USERNAME=yourusername
-MONGO_PASSWORD=yourpassword
-DATABASE_URL=mongodb://yourusername:yourpassword@mongodb:27017/ecommerce?authSource=admin
+# PostgreSQL Credentials
+PGUSER=yourusername
+PGPASSWORD=yourpassword
+PGDATABASE=ecommerce
+PGHOST=postgres
+PGPORT=5432
+DATABASE_URL=postgres://yourusername:yourpassword@postgres:5432/ecommerce
 
 # JWT Secret
 JWT_SECRET=your_jwt_secret_key_here
@@ -86,17 +89,28 @@ ssh root@your-server-ip
 cd /var/www/shopease
 ```
 
-## Step 8: Deploy with Docker Compose
+## Step 8: Test the PostgreSQL Setup
 
-For production deployment with Nginx and SSL:
+Before deploying to production, it's a good idea to test your PostgreSQL setup:
+
+```bash
+chmod +x test-postgres-setup.sh
+./test-postgres-setup.sh
+```
+
+This script will create a test environment and verify that your application can connect to PostgreSQL properly.
+
+## Step 9: Deploy with Docker Compose
+
+After testing, proceed with the production deployment with Nginx and SSL:
 
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-This will start all your services: the Node.js application, MongoDB, Nginx, and Certbot.
+This will start all your services: the Node.js application, PostgreSQL database, Nginx, and Certbot.
 
-## Step 9: Set Up SSL Certificates
+## Step 10: Set Up SSL Certificates
 
 To set up SSL certificates for your domain:
 
@@ -106,7 +120,7 @@ To set up SSL certificates for your domain:
 
 Replace `your-domain.com` with your actual domain name and `your-email@example.com` with your email address.
 
-## Step 10: Verify Deployment
+## Step 11: Verify Deployment
 
 1. Open a web browser and navigate to your domain (https://your-domain.com)
 2. Verify that your e-commerce application is running correctly
@@ -120,8 +134,8 @@ Replace `your-domain.com` with your actual domain name and `your-email@example.c
 # View logs for the app container
 docker-compose -f docker-compose.prod.yml logs -f app
 
-# View logs for the MongoDB container
-docker-compose -f docker-compose.prod.yml logs -f mongodb
+# View logs for the PostgreSQL container
+docker-compose -f docker-compose.prod.yml logs -f postgres
 
 # View logs for the Nginx container
 docker-compose -f docker-compose.prod.yml logs -f nginx
@@ -151,35 +165,44 @@ When you need to update your application:
    docker-compose -f docker-compose.prod.yml up -d --build
    ```
 
-## Backing Up MongoDB Data
+## Backing Up PostgreSQL Data
 
 Create a backup script:
 
 ```bash
-cat > backup-mongo.sh << EOF
+cat > backup-postgres.sh << EOF
 #!/bin/bash
 TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/var/backups/mongodb"
+BACKUP_DIR="/var/backups/postgres"
 
 mkdir -p \$BACKUP_DIR
 
-docker-compose -f docker-compose.prod.yml exec -T mongodb mongodump --username=\$MONGO_USERNAME --password=\$MONGO_PASSWORD --authenticationDatabase=admin --db=ecommerce --out=/dump
+docker-compose -f docker-compose.prod.yml exec -T postgres pg_dump -U \$PGUSER -d \$PGDATABASE > \$BACKUP_DIR/ecommerce_\$TIMESTAMP.sql
 
-docker cp \$(docker-compose -f docker-compose.prod.yml ps -q mongodb):/dump/ecommerce \$BACKUP_DIR/ecommerce_\$TIMESTAMP
-
-echo "Backup completed: \$BACKUP_DIR/ecommerce_\$TIMESTAMP"
+echo "Backup completed: \$BACKUP_DIR/ecommerce_\$TIMESTAMP.sql"
 EOF
 
-chmod +x backup-mongo.sh
+chmod +x backup-postgres.sh
 ```
 
 Schedule the backup using cron:
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 2 * * * /var/www/shopease/backup-mongo.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * /var/www/shopease/backup-postgres.sh") | crontab -
 ```
 
 This will run a backup every day at 2:00 AM.
+
+### Restoring PostgreSQL Data
+
+If you need to restore your database from a backup:
+
+```bash
+chmod +x restore-postgres.sh
+./restore-postgres.sh /var/backups/postgres/ecommerce_20250507_120000.sql
+```
+
+Replace the filename with your actual backup file path.
 
 ## Troubleshooting
 
@@ -193,7 +216,7 @@ docker-compose -f docker-compose.prod.yml logs app
 
 ### Database Connection Issues
 
-Verify your MongoDB connection string in the `.env` file and ensure the MongoDB container is running:
+Verify your PostgreSQL connection string in the `.env` file and ensure the PostgreSQL container is running:
 
 ```bash
 docker-compose -f docker-compose.prod.yml ps
@@ -218,9 +241,9 @@ If necessary, recreate the certificates:
 Your e-commerce application should now be running on your Hostinger VPS with Docker. This setup includes:
 
 - Node.js application containerized with Docker
-- MongoDB database for data storage
+- PostgreSQL database for data storage
 - Nginx as a reverse proxy
 - SSL certificates for secure HTTPS connections
-- Automated backups
+- Automated database backups
 
 For additional support, visit the Hostinger help center or contact their customer support.
