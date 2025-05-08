@@ -23,16 +23,19 @@ fi
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
   echo 'Creating .env file...'
-  echo 'DATABASE_URL=mongodb://username:password@mongodb:27017/ecommerce?authSource=admin' > .env
-  echo 'MONGO_USERNAME=username' >> .env
-  echo 'MONGO_PASSWORD=password' >> .env
+  echo 'DATABASE_URL=mongodb+srv://tukawael452:I2M7aXdZT9oOg0B6@cluster0.udwgvo2.mongodb.net/ecommerce' > .env
   echo 'JWT_SECRET=your_jwt_secret' >> .env
-  echo 'Please update the .env file with your actual credentials.'
+  echo 'NODE_ENV=production' >> .env
+  echo 'Please update the JWT_SECRET in the .env file for better security.'
 fi
 
 # Build and start the application
 echo 'Building and starting the application...'
-docker-compose up -d --build
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Check if services are running
+echo 'Checking if services are running...'
+docker-compose -f docker-compose.prod.yml ps
 
 echo 'Deployment complete!'
-echo 'Your application should now be running at http://your-server-ip:5000'
+echo 'Your application should now be running at http://your-domain.com'

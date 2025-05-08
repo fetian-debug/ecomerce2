@@ -7,23 +7,7 @@ server {
         root /var/www/certbot;
     }
 
-    # Redirect to HTTPS
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    server_name your-domain.com www.your-domain.com;
-
-    # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    # Application proxy
+    # Application proxy - simple HTTP only config for initial setup
     location / {
         # Important: Use the service name from docker-compose instead of localhost
         proxy_pass http://app:5000;

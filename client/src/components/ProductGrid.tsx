@@ -66,28 +66,30 @@ const ProductGrid = ({ products, title, showFilters = false, isLoading = false }
 
   const renderSkeletons = () => {
     return Array(4).fill(0).map((_, index) => (
-      <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden p-4">
-        <Skeleton className="w-full h-48 mb-4" />
-        <Skeleton className="h-5 w-3/4 mb-2" />
-        <Skeleton className="h-4 w-1/2 mb-4" />
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-6 w-1/3" />
-          <Skeleton className="h-8 w-8 rounded-full" />
+      <div key={index} className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <Skeleton className="w-full h-56 mb-4" />
+        <div className="p-5">
+          <Skeleton className="h-6 w-3/4 mb-3" />
+          <Skeleton className="h-4 w-1/2 mb-4" />
+          <div className="flex justify-between items-center mt-2">
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+          </div>
         </div>
       </div>
     ));
   };
 
   return (
-    <section className="container-custom py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-neutral-800">{title}</h2>
+    <section className="container-custom py-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-neutral-800 to-neutral-600 bg-clip-text text-transparent">{title}</h2>
         
         {showFilters && !isLoading && (
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[180px] shadow-sm border-neutral-200 rounded-lg">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -102,7 +104,7 @@ const ProductGrid = ({ products, title, showFilters = false, isLoading = false }
             
             <div className="relative">
               <Select value={filter} onValueChange={setFilter}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[180px] shadow-sm border-neutral-200 rounded-lg">
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
                 <SelectContent>
@@ -117,12 +119,17 @@ const ProductGrid = ({ products, title, showFilters = false, isLoading = false }
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
         {isLoading 
           ? renderSkeletons()
-          : filteredProducts.map((product) => (
+          : filteredProducts.length > 0 ? filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))
+          : (
+            <div className="col-span-full py-12 text-center">
+              <p className="text-xl text-neutral-500">No products found matching your criteria.</p>
+            </div>
+          )
         }
       </div>
     </section>

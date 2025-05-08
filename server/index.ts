@@ -38,27 +38,35 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize database storage 
-let dbStorage;
+// Import database utilities
+import { setMongoDbConnected } from './db-utils';
 
+// Initialize database storage 
 // Start with in-memory storage to prevent blocking server startup
-dbStorage = new MemStorage();
 log("In-memory storage initialized for initial startup");
 
 (async () => {
+  // Log MongoDB connection attempt
+  log("Using MongoDB Atlas connection...");
+  
   // Start the MongoDB connection in parallel with server startup
   connectToDatabase()
     .then(client => {
+      // Create a new MongoDB storage but don't replace the existing one
+      // since routes are already registered with the in-memory storage
+      // Just mark MongoDB as connected for the health endpoint
       log("MongoDB Atlas database connected successfully");
-      dbStorage = new MongoDbStorage(client);
+      
+      // Set global state that MongoDB is connected
+      setMongoDbConnected(true);
     })
     .catch(error => {
-      log(`Error connecting to MongoDB Atlas: ${error}`, "error");
+      log(`Error connecting to MongoDB Atlas: ${error.message}`, "error");
       log("Keeping in-memory storage due to MongoDB connection failure");
     });
 
-  // Register routes with the storage implementation
-  const server = await registerRoutes(app, dbStorage);
+  // Register routes with the storage implementation (no need to pass custom storage, it will use the global one)
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

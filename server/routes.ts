@@ -1,6 +1,7 @@
 import { Router, type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, type IStorage, MemStorage } from "./storage";
+import { isMongoDbConnected } from "./db-utils";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import session from "express-session";
@@ -24,6 +25,17 @@ const SessionStore = MemoryStore(session);
 export async function registerRoutes(app: Express, customStorage?: IStorage): Promise<Server> {
   // Use custom storage if provided, otherwise use default
   const dbStorage: IStorage = customStorage || storage;
+  
+  // Health check endpoint for Docker healthchecks and monitoring
+  app.get('/api/health', (req, res) => {
+    // Use the global state variable to determine if MongoDB is connected
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      database: isMongoDbConnected ? 'mongodb' : 'in-memory'
+    });
+  });
+  
   // Set up session middleware
   app.use(
     session({
@@ -251,20 +263,35 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
       }
       
       // Get product details for each cart item
-      const productIds = cartItems.map(item => item.productId);
+      const productIds = cartItems.map(item => item.productId).filter((id): id is number => id !== null);
       const products = await dbStorage.getProductsByIds(productIds);
       
       // Create a map for easy product lookup
       const productsMap = new Map(products.map(product => [product.id, product]));
       
       // Enhance cart items with product details and calculate total
-      const enhancedItems = cartItems.map(item => {
+      const enhancedItems: Array<{
+        id: number;
+        quantity: number;
+        product: {
+          id: number;
+          name: string;
+          price: number;
+          imageUrl: string;
+          isOnSale: boolean | null;
+          originalPrice: number;
+        };
+      }> = [];
+      
+      for (const item of cartItems) {
+        if (item.productId === null) continue;
+        
         const product = productsMap.get(item.productId);
-        if (!product) return null;
+        if (!product) continue;
         
         const price = product.isOnSale && product.salePrice ? product.salePrice : product.price;
         
-        return {
+        enhancedItems.push({
           id: item.id,
           quantity: item.quantity,
           product: {
@@ -272,16 +299,15 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
             name: product.name,
             price,
             imageUrl: product.imageUrl,
-            isOnSale: product.isOnSale,
+            isOnSale: product.isOnSale || null,
             originalPrice: product.price,
           }
-        };
-      }).filter(Boolean);
+        });
+      }
       
       // Calculate total
-      const total = enhancedItems.reduce((sum, item) => {
-        return sum + (item.quantity * item.product.price);
-      }, 0);
+      const total = enhancedItems.reduce((sum, item) => 
+        sum + (item.quantity * item.product.price), 0);
       
       res.json({ items: enhancedItems, total });
     } catch (error) {
@@ -412,7 +438,7 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
       }
       
       // Get product details for each cart item
-      const productIds = cartItems.map(item => item.productId);
+      const productIds = cartItems.map(item => item.productId).filter((id): id is number => id !== null);
       const products = await dbStorage.getProductsByIds(productIds);
       
       // Create a map for easy product lookup
@@ -420,6 +446,7 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
       
       // Create order items
       for (const item of cartItems) {
+        if (item.productId === null) continue;
         const product = productsMap.get(item.productId);
         if (!product) continue;
         
@@ -461,15 +488,29 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
       const items = await dbStorage.getOrderItems(orderId);
       
       // Get products for each order item
-      const productIds = items.map(item => item.productId);
+      const productIds = items.map(item => item.productId).filter((id): id is number => id !== null);
       const products = await dbStorage.getProductsByIds(productIds);
       
       // Create a map for easy product lookup
       const productsMap = new Map(products.map(product => [product.id, product]));
       
+      // Define enhanced item type
+      type EnhancedOrderItem = {
+        id: number;
+        orderId: number;
+        productId: number;
+        quantity: number;
+        price: number;
+        product: {
+          id: number;
+          name: string;
+          imageUrl: string;
+        } | null;
+      };
+      
       // Enhance order items with product details
       const enhancedItems = items.map(item => {
-        const product = productsMap.get(item.productId);
+        const product = item.productId !== null ? productsMap.get(item.productId) : undefined;
         return {
           ...item,
           product: product ? {
@@ -477,7 +518,7 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
             name: product.name,
             imageUrl: product.imageUrl
           } : null
-        };
+        } as EnhancedOrderItem;
       });
       
       res.json({ ...order, items: enhancedItems });

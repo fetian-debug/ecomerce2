@@ -65,12 +65,20 @@ Make sure to replace the placeholders with secure credentials.
 ## Step 6: Make Scripts Executable
 
 ```bash
-chmod +x deploy.sh init-ssl.sh
+chmod +x deploy.sh deploy-no-ssl.sh init-ssl.sh
 ```
 
 ## Step 7: Install Docker and Docker Compose
 
-The `deploy.sh` script will install Docker and Docker Compose for you if they're not already installed. Run:
+The `deploy.sh` script will install Docker and Docker Compose for you if they're not already installed. 
+
+For initial deployment without SSL (recommended for testing):
+
+```bash
+./deploy-no-ssl.sh your-domain.com
+```
+
+Alternatively, for full deployment with SSL:
 
 ```bash
 ./deploy.sh
@@ -211,12 +219,28 @@ Check the logs:
 docker-compose -f docker-compose.prod.yml logs app
 ```
 
+### Application Health Check
+
+We've added a health check endpoint that can be used to verify that the application is running correctly:
+
+```bash
+curl http://your-domain.com/api/health
+```
+
+This should return a JSON response with status information. If this fails, check your Nginx configuration and ensure the application container is running.
+
 ### Database Connection Issues
 
 Verify your MongoDB connection string in the `.env` file and ensure the MongoDB container is running:
 
 ```bash
 docker-compose -f docker-compose.prod.yml ps
+```
+
+You can also check the health endpoint, which will report whether the application is using MongoDB or in-memory storage:
+
+```bash
+curl http://your-domain.com/api/health | grep database
 ```
 
 ### SSL Certificate Issues

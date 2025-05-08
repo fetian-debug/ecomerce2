@@ -29,28 +29,30 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const productUrl = `/products/${product.slug}`;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover:translate-y-[-5px] group">
       <Link href={productUrl} className="block relative">
         {product.isOnSale && (
-          <div className="absolute top-2 right-2 z-10 bg-destructive text-white text-xs font-bold px-2 py-1 rounded">
+          <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-destructive to-destructive/80 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
             SALE
           </div>
         )}
         {product.isNew && (
-          <div className="absolute top-2 right-2 z-10 bg-secondary text-white text-xs font-bold px-2 py-1 rounded">
+          <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-secondary to-secondary/80 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
             NEW
           </div>
         )}
-        <img 
-          src={product.imageUrl} 
-          alt={product.name} 
-          className="w-full h-48 object-contain p-4" 
-        />
+        <div className="overflow-hidden">
+          <img 
+            src={product.imageUrl} 
+            alt={product.name} 
+            className="w-full h-56 object-cover p-2 transition-transform duration-300 group-hover:scale-105" 
+          />
+        </div>
       </Link>
-      <div className="p-4">
+      <div className="p-5 border-t border-neutral-100">
         <Link href={productUrl}>
-          <h3 className="font-medium text-neutral-800 mb-1">{product.name}</h3>
-          <div className="flex items-center mb-1">
+          <h3 className="font-semibold text-neutral-800 mb-1 text-lg group-hover:text-primary transition-colors duration-200">{product.name}</h3>
+          <div className="flex items-center mb-2">
             <div className="flex text-accent">
               {[1, 2, 3, 4, 5].map((star) => (
                 <span key={star} className="text-[#F59E0B]">
@@ -62,22 +64,26 @@ const ProductCard = ({ product }: ProductCardProps) => {
               ({product.reviewCount || 0})
             </span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-3">
             <div>
-              <span className="text-lg font-bold text-neutral-800">
-                {product.isOnSale && product.salePrice 
-                  ? formatPrice(product.salePrice) 
-                  : formatPrice(product.price)}
-              </span>
-              {product.isOnSale && product.salePrice && (
-                <span className="text-sm text-neutral-500 line-through ml-2">
+              {product.isOnSale && product.salePrice ? (
+                <div className="flex flex-col">
+                  <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                    {formatPrice(product.salePrice)}
+                  </span>
+                  <span className="text-sm text-neutral-500 line-through">
+                    {formatPrice(product.price)}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-lg font-bold text-neutral-800">
                   {formatPrice(product.price)}
                 </span>
               )}
             </div>
             <Button 
               size="icon"
-              className="bg-primary hover:bg-primary/90 text-white rounded-full" 
+              className="bg-primary hover:bg-primary/90 text-white rounded-full shadow-md hover:shadow-primary/25 transition-all duration-300 hover:scale-110" 
               onClick={handleAddToCart}
             >
               <ShoppingCart size={16} />
