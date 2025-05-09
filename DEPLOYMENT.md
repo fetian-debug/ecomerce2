@@ -77,6 +77,10 @@ For initial deployment without SSL (recommended for testing):
 ```bash
 ./deploy-no-ssl.sh your-domain.com
 ```
+Run to check the logs:
+```bash
+docker-compose -f docker-compose.prod.yml logs -f app
+```
 
 Alternatively, for full deployment with SSL:
 
