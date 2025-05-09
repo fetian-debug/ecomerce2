@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { X, User, Lock } from "lucide-react";
+import { X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,8 +53,7 @@ const AuthModal = () => {
     defaultValues: {
       username: "",
       password: ""
-    },
-    mode: "onChange"
+    }
   });
 
   const registerForm = useForm<RegisterFormValues>({
@@ -66,8 +63,7 @@ const AuthModal = () => {
       email: "",
       password: "",
       confirmPassword: ""
-    },
-    mode: "onChange"
+    }
   });
 
   useEffect(() => {
@@ -92,11 +88,6 @@ const AuthModal = () => {
     // Reset error when switching forms
   };
 
-  // Prevent modal from closing when clicking inside the form
-  const handleModalContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   if (!isAuthModalOpen) return null;
 
   return (
@@ -106,11 +97,8 @@ const AuthModal = () => {
         onClick={closeAuthModal}
       ></div>
       
-      <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div 
-          className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden"
-          onClick={handleModalContentClick}
-        >
+      <div className="fixed inset-0 flex items-center justify-center z-50" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
           <div className="flex justify-between items-center p-6 border-b">
             <h2 className="text-xl font-bold">{isLogin ? "Sign In" : "Create Account"}</h2>
             <Button 
@@ -136,12 +124,9 @@ const AuthModal = () => {
                       <FormLabel>Username</FormLabel>
                       <FormControl>
                         <Input 
-                          {...field} 
                           placeholder="Enter your username" 
                           className="w-full"
-                          autoComplete="username"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          value={field.value}
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -162,13 +147,10 @@ const AuthModal = () => {
                       </div>
                       <FormControl>
                         <Input 
-                          {...field} 
                           type="password" 
                           placeholder="Enter your password" 
                           className="w-full"
-                          autoComplete="current-password"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          value={field.value}
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -203,92 +185,61 @@ const AuthModal = () => {
             /* Register Form */
             <Form {...registerForm}>
               <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="p-6">
-                <FormField
-                  control={registerForm.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem className="mb-4">
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="Choose a username" 
-                          className="w-full"
-                          autoComplete="username"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="mb-4">
+                  <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
+                  <input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a username"
+                    className="w-full px-3 py-2 border rounded-md"
+                    {...registerForm.register("username")}
+                  />
+                  {registerForm.formState.errors.username && (
+                    <p className="text-red-500 text-sm mt-1">{registerForm.formState.errors.username.message}</p>
                   )}
-                />
+                </div>
                 
-                <FormField
-                  control={registerForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem className="mb-4">
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="email"
-                          placeholder="Enter your email address" 
-                          className="w-full"
-                          autoComplete="email"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-sm font-medium mb-1">Email Address</label>
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    className="w-full px-3 py-2 border rounded-md"
+                    {...registerForm.register("email")}
+                  />
+                  {registerForm.formState.errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{registerForm.formState.errors.email.message}</p>
                   )}
-                />
+                </div>
                 
-                <FormField
-                  control={registerForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem className="mb-4">
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="password" 
-                          placeholder="Create a password" 
-                          className="w-full"
-                          autoComplete="new-password"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="mb-4">
+                  <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    placeholder="Create a password"
+                    className="w-full px-3 py-2 border rounded-md"
+                    {...registerForm.register("password")}
+                  />
+                  {registerForm.formState.errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{registerForm.formState.errors.password.message}</p>
                   )}
-                />
+                </div>
                 
-                <FormField
-                  control={registerForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem className="mb-6">
-                      <FormLabel>Confirm Password</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="password" 
-                          placeholder="Confirm your password" 
-                          className="w-full"
-                          autoComplete="new-password"
-                          onChange={(e) => field.onChange(e.target.value)}
-                          value={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="mb-6">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">Confirm Password</label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your password"
+                    className="w-full px-3 py-2 border rounded-md"
+                    {...registerForm.register("confirmPassword")}
+                  />
+                  {registerForm.formState.errors.confirmPassword && (
+                    <p className="text-red-500 text-sm mt-1">{registerForm.formState.errors.confirmPassword.message}</p>
                   )}
-                />
+                </div>
                 
                 {error && <p className="text-destructive text-sm mb-4">{error}</p>}
                 
