@@ -18,6 +18,7 @@ import { fromZodError } from "zod-validation-error";
 
 const JWT_SECRET = process.env.JWT_SECRET || "very-secret-key-should-be-in-env";
 const SESSION_SECRET = process.env.SESSION_SECRET || "very-secret-session-key";
+const JWT_EXPIRY = process.env.JWT_EXPIRY || "24h";
 
 // Configure the session store
 const SessionStore = MemoryStore(session);
@@ -39,7 +40,7 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
   // Set up session middleware
   app.use(
     session({
-      cookie: { maxAge: 86400000 }, // 24 hours
+      cookie: { maxAge: 86400000, secure: process.env.NODE_ENV === 'production' }, // 24 hours
       store: new SessionStore({
         checkPeriod: 86400000, // prune expired entries every 24h
       }),
@@ -115,8 +116,8 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
         return res.status(409).json({ message: "Email already exists" });
       }
       
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
+      // Hash password with stronger salt rounds (12 instead of 10)
+      const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
       
       // Create user
@@ -125,16 +126,26 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
         password: hashedPassword,
       });
       
-      // Generate token
+      // Generate token with user info but exclude sensitive data
       const token = jwt.sign(
-        { id: user.id, username: user.username },
+        { 
+          id: user.id, 
+          username: user.username,
+          email: user.email 
+        },
         JWT_SECRET,
-        { expiresIn: "24h" }
+        { expiresIn: JWT_EXPIRY }
       );
       
       // Return user without password and token
       const { password, ...userWithoutPassword } = user;
-      res.status(201).json({ user: userWithoutPassword, token });
+      
+      // Set token in response
+      res.status(201).json({ 
+        user: userWithoutPassword, 
+        token,
+        message: "Registration successful" 
+      });
     } catch (error) {
       console.error("Register error:", error);
       res.status(500).json({ message: "Server error during registration" });
@@ -157,16 +168,25 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Generate token
+      // Generate token with user info but exclude sensitive data
       const token = jwt.sign(
-        { id: user.id, username: user.username },
+        { 
+          id: user.id, 
+          username: user.username,
+          email: user.email 
+        },
         JWT_SECRET,
-        { expiresIn: "24h" }
+        { expiresIn: JWT_EXPIRY }
       );
       
       // Return user without password and token
       const { password: _, ...userWithoutPassword } = user;
-      res.json({ user: userWithoutPassword, token });
+      
+      res.json({ 
+        user: userWithoutPassword, 
+        token,
+        message: "Login successful" 
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Server error during login" });
@@ -463,7 +483,10 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
       // Clear cart
       await dbStorage.clearCart(req.userId);
       
-      res.status(201).json({ order });
+      res.status(201).json({ 
+        order,
+        message: "Order created successfully" 
+      });
     } catch (error) {
       console.error("Create order error:", error);
       res.status(500).json({ message: "Server error" });

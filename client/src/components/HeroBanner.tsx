@@ -40,7 +40,7 @@ const HeroBanner = () => {
                 asChild
                 size="lg"
                 variant="outline"
-                className="text-white border-white hover:bg-white/10 hover:text-white hover:border-white transition-all duration-300 backdrop-blur-sm hover:scale-105 hover:shadow-lg hover:shadow-white/10"
+                className=" border-white hover:bg-white/10 hover:text-white hover:border-white transition-all duration-300 backdrop-blur-sm hover:scale-105 hover:shadow-lg hover:shadow-white/10"
               >
                 <Link href="/about" className="flex items-center gap-2">
                   Learn More

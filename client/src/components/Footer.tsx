@@ -130,7 +130,7 @@ const Footer = () => {
         </div>
         <div className="pt-8 border-t border-neutral-700 text-neutral-400 text-sm">
           <div className="flex flex-col md:flex-row md:justify-between">
-            <p>&copy; 2023 ShopEase. All rights reserved.</p>
+            <p>&copy; 2025 ShopEase. All rights reserved.</p>
             <div className="flex space-x-4 mt-4 md:mt-0">
               <Link href="/privacy" className="hover:text-white transition-colors duration-150">
                 Privacy Policy
