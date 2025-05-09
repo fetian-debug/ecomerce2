@@ -55,7 +55,8 @@ const AuthModal = () => {
     defaultValues: {
       username: "",
       password: ""
-    }
+    },
+    mode: "onChange"
   });
 
   const registerForm = useForm<RegisterFormValues>({
@@ -65,7 +66,8 @@ const AuthModal = () => {
       email: "",
       password: "",
       confirmPassword: ""
-    }
+    },
+    mode: "onChange"
   });
 
   useEffect(() => {
@@ -90,6 +92,11 @@ const AuthModal = () => {
     // Reset error when switching forms
   };
 
+  // Prevent modal from closing when clicking inside the form
+  const handleModalContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   if (!isAuthModalOpen) return null;
 
   return (
@@ -100,7 +107,10 @@ const AuthModal = () => {
       ></div>
       
       <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
+        <div 
+          className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden"
+          onClick={handleModalContentClick}
+        >
           <div className="flex justify-between items-center p-6 border-b">
             <h2 className="text-xl font-bold">{isLogin ? "Sign In" : "Create Account"}</h2>
             <Button 
@@ -108,6 +118,7 @@ const AuthModal = () => {
               size="icon"
               onClick={closeAuthModal}
               className="text-neutral-500 hover:text-neutral-800"
+              type="button"
             >
               <X />
             </Button>
@@ -128,6 +139,9 @@ const AuthModal = () => {
                           {...field} 
                           placeholder="Enter your username" 
                           className="w-full"
+                          autoComplete="username"
+                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value}
                         />
                       </FormControl>
                       <FormMessage />
@@ -152,6 +166,9 @@ const AuthModal = () => {
                           type="password" 
                           placeholder="Enter your password" 
                           className="w-full"
+                          autoComplete="current-password"
+                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value}
                         />
                       </FormControl>
                       <FormMessage />
@@ -175,6 +192,7 @@ const AuthModal = () => {
                     variant="link" 
                     className="text-primary hover:text-primary/80 p-0 h-auto"
                     onClick={toggleForm}
+                    type="button"
                   >
                     Create Account
                   </Button>
@@ -196,6 +214,9 @@ const AuthModal = () => {
                           {...field} 
                           placeholder="Choose a username" 
                           className="w-full"
+                          autoComplete="username"
+                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value}
                         />
                       </FormControl>
                       <FormMessage />
@@ -215,6 +236,9 @@ const AuthModal = () => {
                           type="email"
                           placeholder="Enter your email address" 
                           className="w-full"
+                          autoComplete="email"
+                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value}
                         />
                       </FormControl>
                       <FormMessage />
@@ -234,6 +258,9 @@ const AuthModal = () => {
                           type="password" 
                           placeholder="Create a password" 
                           className="w-full"
+                          autoComplete="new-password"
+                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value}
                         />
                       </FormControl>
                       <FormMessage />
@@ -253,6 +280,9 @@ const AuthModal = () => {
                           type="password" 
                           placeholder="Confirm your password" 
                           className="w-full"
+                          autoComplete="new-password"
+                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value}
                         />
                       </FormControl>
                       <FormMessage />
@@ -276,6 +306,7 @@ const AuthModal = () => {
                     variant="link" 
                     className="text-primary hover:text-primary/80 p-0 h-auto"
                     onClick={toggleForm}
+                    type="button"
                   >
                     Sign In
                   </Button>
