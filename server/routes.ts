@@ -194,21 +194,23 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
   });
 
   // Get current user
-  apiRouter.get("/users/me", verifyToken, async (req: any, res) => {
-    try {
-      const user = await dbStorage.getUser(req.userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      const { password, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      console.error("Get user error:", error);
-      res.status(500).json({ message: "Server error" });
+apiRouter.get("/users/me", verifyToken, async (req: any, res) => {
+  try {
+    const user = await dbStorage.getUser(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-  });
+    
+    // Return user without password
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Get user error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
   // Categories routes
   apiRouter.get("/categories", async (req, res) => {

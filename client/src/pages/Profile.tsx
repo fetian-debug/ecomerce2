@@ -36,18 +36,44 @@ type SecurityFormValues = z.infer<typeof securitySchema>;
 
 const Profile = () => {
   const [, navigate] = useLocation();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, checkAuth } = useAuth();
   const { toast } = useToast();
   
-  // If not authenticated, redirect to home
+  // Check authentication status when component mounts
+  useEffect(() => {
+    const verifyAuth = async () => {
+      if (!isAuthenticated) {
+        try {
+          await checkAuth();
+        } catch (error) {
+          console.error("Authentication check failed:", error);
+          navigate("/");
+        }
+      }
+    };
+    
+    verifyAuth();
+  }, [isAuthenticated, checkAuth, navigate]);
+  
+  // If still not authenticated after check, show loading or redirect
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/");
+      const timer = setTimeout(() => {
+        navigate("/");
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, navigate]);
   
-  if (!isAuthenticated || !user) {
-    return null;
+  // If no user data, show loading
+  if (!user) {
+    return (
+      <div className="container-custom py-20 text-center">
+        <h2 className="text-2xl font-semibold mb-4">Loading profile...</h2>
+        <p>Please wait while we load your profile information.</p>
+      </div>
+    );
   }
   
   const profileForm = useForm<ProfileFormValues>({
