@@ -63,7 +63,7 @@ EOF
 
 # Build and start the application
 echo "Building and starting the application..."
-docker-compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.yml up --build
 
 # Check if containers are running
 echo "Checking container status..."
