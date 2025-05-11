@@ -1,16 +1,10 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext";
 import { formatPrice } from "@/lib/utils";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
 import {
   Form,
@@ -31,7 +25,6 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 
 const checkoutSchema = z.object({
   fullName: z.string().min(3, "Full name is required"),
@@ -48,79 +41,63 @@ const checkoutSchema = z.object({
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
+// Static cart items for demo
+const staticCartItems = [
+  {
+    id: 1,
+    quantity: 2,
+    product: {
+      id: 101,
+      name: "Wireless Headphones",
+      price: 79.99,
+      imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
+    }
+  },
+  {
+    id: 2,
+    quantity: 1,
+    product: {
+      id: 102,
+      name: "Smart Watch",
+      price: 149.99,
+      imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12",
+    }
+  },
+  {
+    id: 3,
+    quantity: 3,
+    product: {
+      id: 103,
+      name: "Wireless Earbuds",
+      price: 59.99,
+      imageUrl: "https://images.unsplash.com/photo-1608156639585-b3a032ef9689",
+    }
+  }
+];
+
+// Calculate static totals
+const staticCartTotal = staticCartItems.reduce(
+  (sum, item) => sum + (item.product.price * item.quantity), 
+  0
+);
+const staticShippingCost = 10.00;
+
 const Checkout = () => {
-  const [, navigate] = useLocation();
-  const { cartItems, cartTotal, shippingCost, clearCart } = useCart();
-  const { user, isAuthenticated, showAuthModal } = useAuth();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // If not authenticated, redirect to login
-  if (!isAuthenticated) {
-    showAuthModal();
-    navigate("/");
-    return null;
-  }
-  
-  // If cart is empty, redirect to products
-  if (cartItems.length === 0) {
-    navigate("/products");
-    return null;
-  }
-  
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      fullName: user?.fullName || "",
-      email: user?.email || "",
-      address: user?.address || "",
-      city: "",
-      state: "",
-      zipCode: "",
-      cardNumber: "",
-      cardExpiry: "",
-      cardCvv: "",
+      fullName: "John Doe",
+      email: "john.doe@example.com",
+      address: "123 Main St",
+      city: "New York",
+      state: "NY",
+      zipCode: "10001",
+      cardNumber: "4111111111111111",
+      cardExpiry: "12/25",
+      cardCvv: "123",
       notes: "",
     },
   });
-  
-  // Create order mutation
-  const createOrderMutation = useMutation({
-    mutationFn: async (orderData: { address: string, total: number }) => {
-      const res = await apiRequest("POST", "/api/orders", orderData);
-      return res.json();
-    },
-    onSuccess: () => {
-      setIsSubmitting(false);
-      clearCart();
-      toast({
-        title: "Order placed successfully!",
-        description: "Your order has been placed and is being processed.",
-      });
-      navigate("/orders");
-    },
-    onError: (error) => {
-      setIsSubmitting(false);
-      toast({
-        title: "Failed to place order",
-        description: error instanceof Error ? error.message : "Please try again later",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  const onSubmit = (data: CheckoutFormValues) => {
-    const total = cartTotal + shippingCost;
-    const fullAddress = `${data.address}, ${data.city}, ${data.state} ${data.zipCode}`;
-    
-    setIsSubmitting(true);
-    
-    // Process order
-    createOrderMutation.mutate({
-      address: fullAddress,
-      total
-    });
-  };
   
   return (
     <>
@@ -146,7 +123,7 @@ const Checkout = () => {
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form className="space-y-6">
                 {/* Shipping Information */}
                 <Card>
                   <CardHeader>
@@ -263,11 +240,6 @@ const Checkout = () => {
                             <Input 
                               placeholder="1234 5678 9012 3456" 
                               {...field} 
-                              onChange={(e) => {
-                                // Only allow numbers
-                                const value = e.target.value.replace(/\D/g, '');
-                                field.onChange(value);
-                              }}
                               maxLength={16}
                             />
                           </FormControl>
@@ -287,13 +259,6 @@ const Checkout = () => {
                               <Input 
                                 placeholder="MM/YY" 
                                 {...field} 
-                                onChange={(e) => {
-                                  let value = e.target.value.replace(/[^\d]/g, '');
-                                  if (value.length > 2) {
-                                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
-                                  }
-                                  field.onChange(value);
-                                }}
                                 maxLength={5}
                               />
                             </FormControl>
@@ -313,10 +278,6 @@ const Checkout = () => {
                                 placeholder="123" 
                                 type="password"
                                 {...field} 
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/\D/g, '');
-                                  field.onChange(value);
-                                }}
                                 maxLength={3}
                               />
                             </FormControl>
@@ -358,19 +319,11 @@ const Checkout = () => {
                 </Card>
                 
                 <Button 
-                  type="submit" 
+                  type="button" 
                   className="w-full lg:w-auto"
                   size="lg"
-                  disabled={isSubmitting}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    `Complete Order (${formatPrice(cartTotal + shippingCost)})`
-                  )}
+                  Complete Order ({formatPrice(staticCartTotal + staticShippingCost)})
                 </Button>
               </form>
             </Form>
@@ -383,7 +336,7 @@ const Checkout = () => {
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cartItems.map(item => (
+                {staticCartItems.map(item => (
                   <div key={item.id} className="flex justify-between py-2">
                     <div className="flex items-center">
                       <div className="w-16 h-16 rounded bg-neutral-100 mr-4 overflow-hidden">
@@ -411,11 +364,11 @@ const Checkout = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>{formatPrice(cartTotal)}</span>
+                    <span>{formatPrice(staticCartTotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>{formatPrice(shippingCost)}</span>
+                    <span>{formatPrice(staticShippingCost)}</span>
                   </div>
                 </div>
                 
@@ -423,7 +376,7 @@ const Checkout = () => {
                 
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>{formatPrice(cartTotal + shippingCost)}</span>
+                  <span>{formatPrice(staticCartTotal + staticShippingCost)}</span>
                 </div>
               </CardContent>
               <CardFooter className="bg-neutral-50 text-sm text-neutral-600 px-6 py-4 rounded-b-lg">

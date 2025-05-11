@@ -190,6 +190,235 @@ export class MemStorage implements IStorage {
         salePrice: 79.99,
         isNew: false
       }
+   ,
+        // Electronics (continued)
+        {
+          name: "Bluetooth Speaker",
+          slug: "bluetooth-speaker",
+          description: "Portable waterproof speaker with 20hr battery life",
+          price: 129.99,
+          imageUrl: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb",
+          stock: 35,
+          categoryId: 1,
+          isOnSale: true,
+          salePrice: 99.99,
+          isNew: false
+        },
+        {
+          name: "Fitness Tracker",
+          slug: "fitness-tracker",
+          description: "Track steps, heart rate, and sleep patterns",
+          price: 79.99,
+          imageUrl: "https://images.unsplash.com/photo-1585123388860-6e79dc0f6230",
+          stock: 40,
+          categoryId: 1,
+          isOnSale: false,
+          salePrice: null,
+          isNew: true
+        },
+        {
+          name: "Tablet",
+          slug: "tablet",
+          description: "10-inch tablet with high-resolution display",
+          price: 349.99,
+          imageUrl: "https://images.unsplash.com/photo-1546054454-aa26e2b734c7",
+          stock: 18,
+          categoryId: 1,
+          isOnSale: false,
+          salePrice: null,
+          isNew: false
+        },
+      
+        // Fashion (continued)
+        {
+          name: "Leather Belt",
+          slug: "leather-belt",
+          description: "Genuine leather belt with stainless steel buckle",
+          price: 49.99,
+          imageUrl: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
+          stock: 55,
+          categoryId: 2,
+          isOnSale: false,
+          salePrice: null,
+          isNew: false
+        },
+        {
+          name: "Winter Coat",
+          slug: "winter-coat",
+          description: "Waterproof insulated coat for extreme cold",
+          price: 199.99,
+          imageUrl: "https://images.unsplash.com/photo-1520367445093-50dc08a59d9d",
+          stock: 25,
+          categoryId: 2,
+          isOnSale: true,
+          salePrice: 159.99,
+          isNew: false
+        },
+        {
+          name: "Silk Scarf",
+          slug: "silk-scarf",
+          description: "Luxury silk scarf with elegant pattern",
+          price: 69.99,
+          imageUrl: "https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9",
+          stock: 30,
+          categoryId: 2,
+          isOnSale: false,
+          salePrice: null,
+          isNew: true
+        },
+      
+        // Home & Kitchen
+        {
+          name: "Non-Stick Pan Set",
+          slug: "non-stick-pan-set",
+          description: "3-piece ceramic non-stick cookware set",
+          price: 89.99,
+          imageUrl: "https://images.unsplash.com/photo-1583778176476-4a8b02b64e01",
+          stock: 22,
+          categoryId: 3,
+          isOnSale: false,
+          salePrice: null,
+          isNew: false
+        },
+        {
+          name: "Smart Lighting Kit",
+          slug: "smart-lighting-kit",
+          description: "Color-changing LED bulbs with app control",
+          price: 129.99,
+          imageUrl: "https://images.unsplash.com/photo-1513506003901-1e6a229e616d",
+          stock: 15,
+          categoryId: 3,
+          isOnSale: true,
+          salePrice: 99.99,
+          isNew: false
+        },
+        {
+          name: "Robot Vacuum",
+          slug: "robot-vacuum",
+          description: "Self-charging robot vacuum with smart mapping",
+          price: 399.99,
+          imageUrl: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd",
+          stock: 12,
+          categoryId: 3,
+          isOnSale: false,
+          salePrice: null,
+          isNew: true
+        },
+      
+        // Beauty & Personal Care
+        {
+          name: "Electric Toothbrush",
+          slug: "electric-toothbrush",
+          description: "Sonic toothbrush with 3 cleaning modes",
+          price: 79.99,
+          imageUrl: "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2",
+          stock: 40,
+          categoryId: 4,
+          isOnSale: false,
+          salePrice: null,
+          isNew: false
+        },
+        {
+          name: "Hair Dryer",
+          slug: "hair-dryer",
+          description: "Professional ionic hair dryer with diffuser",
+          price: 59.99,
+          imageUrl: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
+          stock: 28,
+          categoryId: 4,
+          isOnSale: true,
+          salePrice: 49.99,
+          isNew: false
+        },
+        {
+          name: "Makeup Mirror",
+          slug: "makeup-mirror",
+          description: "LED vanity mirror with magnification",
+          price: 89.99,
+          imageUrl: "https://images.unsplash.com/photo-1596462502278-27bfdc403348",
+          stock: 20,
+          categoryId: 4,
+          isOnSale: false,
+          salePrice: null,
+          isNew: true
+        },
+      
+        // Sports & Outdoors
+        {
+          name: "Camping Tent",
+          slug: "camping-tent",
+          description: "4-person waterproof tent with rainfly",
+          price: 199.99,
+          imageUrl: "https://images.unsplash.com/photo-1537905569824-f89f14cceb68",
+          stock: 18,
+          categoryId: 5,
+          isOnSale: false,
+          salePrice: null,
+          isNew: false
+        },
+        {
+          name: "Mountain Bike",
+          slug: "mountain-bike",
+          description: "21-speed aluminum frame mountain bike",
+          price: 599.99,
+          imageUrl: "https://images.unsplash.com/photo-1485965120184-e220f721d03e",
+          stock: 8,
+          categoryId: 5,
+          isOnSale: true,
+          salePrice: 549.99,
+          isNew: false
+        },
+        {
+          name: "Fitness Dumbbells",
+          slug: "fitness-dumbbells",
+          description: "Adjustable weight set (5-25 lbs per dumbbell)",
+          price: 149.99,
+          imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b",
+          stock: 25,
+          categoryId: 5,
+          isOnSale: false,
+          salePrice: null,
+          isNew: true
+        },
+      
+        // Toys & Games
+        {
+          name: "Drone with Camera",
+          slug: "drone-with-camera",
+          description: "4K camera drone with 30min flight time",
+          price: 299.99,
+          imageUrl: "https://images.unsplash.com/photo-1579829366248-204fe8413f31",
+          stock: 15,
+          categoryId: 6,
+          isOnSale: false,
+          salePrice: null,
+          isNew: false
+        },
+        {
+          name: "Building Blocks Set",
+          slug: "building-blocks-set",
+          description: "250-piece creative construction set",
+          price: 39.99,
+          imageUrl: "https://images.unsplash.com/photo-1594787319145-948796f1369e",
+          stock: 50,
+          categoryId: 6,
+          isOnSale: true,
+          salePrice: 29.99,
+          isNew: false
+        },
+        {
+          name: "RC Car",
+          slug: "rc-car",
+          description: "1:10 scale remote control car with 2.4GHz controller",
+          price: 89.99,
+          imageUrl: "https://images.unsplash.com/photo-1589254065909-b7086229d08c",
+          stock: 30,
+          categoryId: 6,
+          isOnSale: false,
+          salePrice: null,
+          isNew: true
+        }
+      
     ];
     
     products.forEach(product => this.createProduct(product));
