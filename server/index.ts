@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { MongoDbStorage, MemStorage } from "./storage";
+import { initializeMongoDbStorage } from './storage-init';
 import { connectToDatabase } from "./db";
 
 const app = express();
@@ -65,6 +66,7 @@ log("In-memory storage initialized for initial startup");
       log("Keeping in-memory storage due to MongoDB connection failure");
     });
 
+    const activeStorage = await initializeMongoDbStorage();
   // Register routes with the storage implementation (no need to pass custom storage, it will use the global one)
   const server = await registerRoutes(app);
 

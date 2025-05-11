@@ -4,7 +4,6 @@ import { storage, type IStorage, MemStorage } from "./storage";
 import { isMongoDbConnected } from "./db-utils";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import session from "express-session";
 import {
   loginUserSchema,
   registerUserSchema,
@@ -12,24 +11,16 @@ import {
   insertOrderSchema,
   insertOrderItemSchema,
 } from "@shared/schema";
-import MemoryStore from "memorystore";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
 const JWT_SECRET = process.env.JWT_SECRET || "very-secret-key-should-be-in-env";
-const SESSION_SECRET = process.env.SESSION_SECRET || "very-secret-session-key";
 const JWT_EXPIRY = process.env.JWT_EXPIRY || "24h";
 
-// Configure the session store
-const SessionStore = MemoryStore(session);
-
 export async function registerRoutes(app: Express, customStorage?: IStorage): Promise<Server> {
-  // Use custom storage if provided, otherwise use default
   const dbStorage: IStorage = customStorage || storage;
   
-  // Health check endpoint for Docker healthchecks and monitoring
   app.get('/api/health', (req, res) => {
-    // Use the global state variable to determine if MongoDB is connected
     res.status(200).json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
@@ -37,23 +28,8 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
     });
   });
   
-  // Set up session middleware
-  app.use(
-    session({
-      cookie: { maxAge: 86400000, secure: process.env.NODE_ENV === 'production' }, // 24 hours
-      store: new SessionStore({
-        checkPeriod: 86400000, // prune expired entries every 24h
-      }),
-      resave: false,
-      saveUninitialized: false,
-      secret: SESSION_SECRET,
-    })
-  );
-
-  // Create API router
   const apiRouter = Router();
 
-  // Middleware to handle zod validation errors
   const validateRequest = (schema: any) => {
     return (req: any, res: any, next: any) => {
       try {
@@ -69,7 +45,6 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
     };
   };
 
-  // Middleware to verify JWT
   const verifyToken = (req: any, res: any, next: any) => {
     const authHeader = req.headers.authorization;
     
@@ -102,10 +77,8 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
   // Auth routes
   apiRouter.post("/auth/register", validateRequest(registerUserSchema), async (req, res) => {
     try {
-      // Destructure and remove confirmPassword
       const { confirmPassword, ...userData } = req.body;
       
-      // Check if user already exists
       const existingUser = await dbStorage.getUserByUsername(userData.username);
       if (existingUser) {
         return res.status(409).json({ message: "Username already exists" });
@@ -116,17 +89,14 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
         return res.status(409).json({ message: "Email already exists" });
       }
       
-      // Hash password with stronger salt rounds (12 instead of 10)
       const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
       
-      // Create user
       const user = await dbStorage.createUser({
         ...userData,
         password: hashedPassword,
       });
       
-      // Generate token with user info but exclude sensitive data
       const token = jwt.sign(
         { 
           id: user.id, 
@@ -137,10 +107,8 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
         { expiresIn: JWT_EXPIRY }
       );
       
-      // Return user without password and token
       const { password, ...userWithoutPassword } = user;
       
-      // Set token in response
       res.status(201).json({ 
         user: userWithoutPassword, 
         token,
@@ -156,19 +124,16 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
     try {
       const { username, password } = req.body;
       
-      // Check if user exists
       const user = await dbStorage.getUserByUsername(username);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Generate token with user info but exclude sensitive data
       const token = jwt.sign(
         { 
           id: user.id, 
@@ -179,7 +144,6 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
         { expiresIn: JWT_EXPIRY }
       );
       
-      // Return user without password and token
       const { password: _, ...userWithoutPassword } = user;
       
       res.json({ 
@@ -192,6 +156,8 @@ export async function registerRoutes(app: Express, customStorage?: IStorage): Pr
       res.status(500).json({ message: "Server error during login" });
     }
   });
+
+
 
   // Get current user
 apiRouter.get("/users/me", verifyToken, async (req: any, res) => {
